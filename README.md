@@ -1,13 +1,16 @@
 # Ansible role: MULTIPLEXER
 
+Setup Tmux and Screen.
+
 Only tested on Archlinux.
 
 ## Usage
 Override [defaults](https://github.com/lunics/ansible_role_multiplexer/blob/main/defaults/main.yml)
 ```yaml
-default_user: foo           # Define the target user
+tmux: true                  # enable the tmux installation
+default_user: foo           # set the target user
 
-binds_multiplexer:          # Define the Tmux bindings
+binds_multiplexer:          # set the tmux bindings
   leader_key: C-a
   window:
     prev:    M-h
