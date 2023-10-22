@@ -1,0 +1,6 @@
+tmux:   false
+screen: false
+file_explorer: ranger
+default_user:  ""
+path_config:   $HOME/.config
+path_cache:    $HOME/.cache

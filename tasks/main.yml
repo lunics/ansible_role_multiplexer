@@ -1,0 +1,8 @@
+- block:
+  - import_tasks: tmux.yml
+
+  - import_tasks: screen.yml
+
+  become_user: "{{ default_user }}"
+  when: default_user | length
+  tags: multiplexer

@@ -1,0 +1,6 @@
+[Unit]
+Description=tmux autosave
+
+[Service]
+Type=forking
+ExecStart=sh {{ path_config }}/.tmux/plugins/tmux-resurrect/scripts/save.sh

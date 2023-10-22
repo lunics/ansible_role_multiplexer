@@ -1,0 +1,122 @@
+- block:
+  - name: tmux | package > intall dependencies
+    package:
+      name: "{{ item }}"
+    loop:
+      - tmux            # depends on screen for working
+      - tmuxp           # tmuxinator like en plus pratique ?
+      # - tmuxinator    # (aur) no more needed with tmux-resurrect plugin
+      - entr            # tmux-autoreload plugin dependence
+      - python-libtmux  # for tmux-window-name plugin
+      - git             # to clone the repos of tmux plugins
+    become_user: root
+
+  ## override default tmux.conf if present in files/config
+  # - name: "[stat] check if custom tmux conf present"
+  #   stat:
+  #     path: "{{ root_play }}/files/config/tmux/tmux.conf"
+  #   register: _tmuxconf
+  #   delegate_to: localhost
+
+  ## IF src folder exists THEN run task
+  # - name: "[synchronize] tmux config directory"
+  #   synchronize:
+  #     src:  "{{ role_path }}/files/tmux"
+  #     dest: "/home/{{ user.1.name }}/.config"
+  #     use_ssh_args: yes
+  #     rsync_path:   "sudo -u {{ user.1.name }} rsync"
+
+  - name: tmux | file > create tmux dirs
+    file:
+      path:  "{{ item }}"
+      state: directory
+    loop:
+      - "{{ path_config }}/tmux/plugins"
+      - "{{ path_config }}/systemd/user"
+      - "{{ path_cache }}/tmux"
+
+  - name: tmux | template > generate tmux config files
+    template:
+      src:  "tmux/{{ item }}.conf"
+      dest: "{{ path_config + '/tmux/' + item + '.conf' }}"
+    loop:
+      - tmux
+      - set
+      - bind
+      - status_bar
+      - plugins
+    tags: tmux_config
+
+  - name: tmux | git > clone tmux plugins
+    git:
+      repo:   "{{ item.repo }}"
+      dest:   "{{ path_config + '/tmux/plugins/' + item.dest }}"
+      depth:  1
+      update: no
+    loop:
+      - { repo: "https://github.com/tmux-plugins/tpm"           , dest: tpm                 }
+      - { repo: "https://github.com/sainnhe/tmux-fzf"           , dest: tmux-fzf            }
+      - { repo: "https://github.com/lljbash/tmux-update-display", dest: tmux-update-display }
+      - { repo: "https://github.com/tmux-plugins/tmux-continuum", dest: tmux-continuum      }
+      - { repo: "https://github.com/tmux-plugins/tmux-resurrect", dest: tmux-resurrect      }
+      - { repo: "https://github.com/b0o/tmux-autoreload"        , dest: tmux-autoreload     }
+      - { repo: "https://github.com/tmux-plugins/tmux-sensible" , dest: tmux-sensible       }
+
+  - name: tmux | template > generate tmux-fzf config file, and window_2.sh
+    template:
+      src:  "{{ item.src  }}"
+      dest: "{{ item.dest }}"
+    loop:
+      - { src: tmux/window.sh,   dest: "{{ path_config }}/tmux/plugins/tmux-fzf/scripts/window.sh" }
+      # - { src: tmux/window_2.sh, dest: "{{ path_config }}/tmux/window_2.sh" }
+
+  ## can't be executed from STTY, only from xorg session
+  ## ONLY if xorg is running
+  # - name: "[shell] reload tmux with tpm"
+  #   shell: >
+  #     tmux source {{ path_config }}/tmux/tmux.conf &&
+  #     sh {{ path_config }}/tmux/plugins/tpm/scripts/install_plugins.sh
+
+  # - name: "[replace] disable tmux session saved popup"
+  #   blockinfile:
+  #     path:         "{{ path_config }}/tmux/plugins/tmux-resurrect/scripts/save.sh"
+  #     marker:       "{mark}"
+  #     marker_begin: "main() {"
+  #     marker_end:   "}"
+  #     block: |
+  #       if supported_tmux_version_ok; then
+  #         # if show_output; then
+  #         #   start_spinner "Saving..." "Tmux environment saved!"
+  #         # fi
+  #         save_all
+  #         # if show_output; then
+  #         #   stop_spinner
+  #         #   display_message "Tmux environment saved!"
+  #         # fi
+  #       fi
+
+  # cron:
+  #   name: "job title"
+  #   minute: "00"
+  #   hour: "20"
+  #   weekday: "2"
+  #   job: "ls -l"
+
+
+  # - name: "[template] deploy tmux autosave service"
+  #   template:
+  #     src:  "{{ item }}.j2"
+  #     dest: "{{ path_config }}/systemd/user/{{ item }}"
+  #   loop:
+  #     - tmux_autosave.service
+  #     - tmux_autosave.timer
+
+  # - name: "[systemd] start and enable tmux autosave"
+  #   systemd:
+  #     name:    tmux_autosave.timer
+  #     state:   started
+  #     enabled: yes
+  #     scope:   user
+
+  when: tmux
+  tags: tmux

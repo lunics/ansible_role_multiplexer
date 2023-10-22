@@ -1,0 +1,20 @@
+- block:
+  - name: screen | package > intall dependencies
+    package:
+      name: "{{ item }}"
+    loop:
+      - screen
+    become_user: root
+
+  - name: screen | file > create screen config directory
+    file:
+      path:  "{{ path_config }}/screen"
+      state: directory
+
+  - name: screen | template > generate screen config
+    template:
+      src:  screen/screen.conf
+      dest: "{{ path_config }}/screen/screen.conf"
+
+  when: screen
+  tags: screen
